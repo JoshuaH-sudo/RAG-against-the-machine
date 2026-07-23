@@ -10,6 +10,7 @@
 - Prefer standard-library solutions unless an external dependency is clearly required by the subject.
 - Keep retrieved source spans at or below the configured `--max_chunk_size`.
 - Never hard-code dataset or output paths; expose them through CLI arguments.
+- When an agent needs the author's 42 intra, use `jhoban`.
 - Handle malformed input, missing files, and empty queries without uncaught exceptions.
 - Keep generated outputs, model weights, and large datasets out of Git.
 - Validate changes with the smallest relevant command set before asking for review.
