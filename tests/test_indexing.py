@@ -1,13 +1,62 @@
 """Tests for lexical indexing and retrieval."""
 
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
-from src.indexing import search_index
+from src.indexing import build_index, search_index
 from src.models import IndexedChunk, PersistedIndex
 
 
 class IndexingTests(unittest.TestCase):
     """Validate the TF-IDF lexical retriever."""
+
+    def test_build_index_persists_bounded_chunks_and_statistics(self) -> None:
+        """Indexing should persist exact paths, offsets, tokens, and frequencies."""
+
+        with TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            raw_directory = root / "data" / "raw"
+            output_directory = root / "data" / "processed"
+            raw_directory.mkdir(parents=True)
+            (raw_directory / "module.py").write_text(
+                "class Example:\n    pass\n\ndef run():\n    return Example()\n",
+                encoding="utf-8",
+            )
+            (raw_directory / "guide.md").write_text(
+                "# Guide\n\nUse the example API.\n\n# Details\n\nMore API details.",
+                encoding="utf-8",
+            )
+
+            persisted_index = build_index(
+                raw_directory,
+                output_directory,
+                max_chunk_size=30,
+                repository_root=root,
+            )
+
+            self.assertEqual(persisted_index.chunk_count, len(persisted_index.chunks))
+            self.assertTrue((output_directory / "index.json").exists())
+            self.assertIn("api", persisted_index.document_frequencies)
+            self.assertTrue(
+                all(
+                    len(chunk.text) <= 30
+                    and chunk.last_character_index - chunk.first_character_index <= 30
+                    for chunk in persisted_index.chunks
+                )
+            )
+            self.assertEqual(
+                {chunk.file_path for chunk in persisted_index.chunks},
+                {"data/raw/guide.md", "data/raw/module.py"},
+            )
+
+    def test_build_index_rejects_non_positive_chunk_size(self) -> None:
+        """Indexing should reject invalid chunk sizes before scanning files."""
+
+        with TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            with self.assertRaises(ValueError):
+                build_index(root, root / "processed", 0, root)
 
     def test_tfidf_ranks_matching_chunk_first(self) -> None:
         """A distinctive query term should rank its matching chunk first."""

@@ -34,20 +34,25 @@ def build_index(
 ) -> PersistedIndex:
     """Build and persist a lexical index for supported files."""
 
+    if max_chunk_size <= 0:
+        raise ValueError("max_chunk_size must be greater than zero")
     ensure_directory(output_directory)
     indexed_chunks: list[IndexedChunk] = []
     document_frequencies: Counter[str] = Counter()
 
-    files = [
-        path
-        for path in raw_directory.rglob("*")
-        if path.is_file() and path.suffix.lower() in TEXT_SUFFIXES
-    ]
+    files = sorted(
+        (
+            path
+            for path in raw_directory.rglob("*")
+            if path.is_file() and path.suffix.lower() in TEXT_SUFFIXES
+        ),
+        key=lambda path: path.as_posix(),
+    )
 
     for path in tqdm(files, desc="Indexing", unit="file"):
         try:
             content = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
+        except (OSError, UnicodeDecodeError):
             continue
         try:
             relative_path = path.relative_to(repository_root).as_posix()
