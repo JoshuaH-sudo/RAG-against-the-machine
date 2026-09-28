@@ -42,7 +42,7 @@ make clean
 ```
 
 ## System architecture
-The scaffold follows the mandatory pipeline split:
+The project follows the mandatory pipeline split:
 1. **Indexing** (`src/indexing.py`) reads text-like files from `data/raw/`, chunks them, tokenizes them, and persists a lexical index under `data/processed/`.
 2. **Retrieval** (`src/indexing.py`) loads the persisted index and ranks chunks with a lightweight TF-IDF-style scorer.
 3. **Answer generation** (`src/generation.py`) reconstructs retrieved chunks into a bounded prompt and lazily loads `Qwen/Qwen3-0.6B` through Transformers when the answer commands are used. If model dependencies or weights are unavailable, it returns an explicit grounded-generation error instead of inventing an answer.
@@ -73,7 +73,7 @@ This project is designed for correctness, structure, and graceful error handling
 - **pydantic** defines the required exchange formats to keep file I/O and CLI payloads validated.
 - **Python Fire** provides the mandatory CLI surface with minimal boilerplate.
 - **tqdm** is used in dataset and indexing loops so long-running commands show progress.
-- The answer generator is intentionally explicit about being a scaffold instead of pretending to be a final model-backed implementation.
+- Answer generation loads Qwen lazily so indexing and retrieval stay lightweight; unavailable model dependencies produce an explicit error in the answer field rather than an invented answer.
 
 ## Challenges faced
 The main challenge in a skeleton-first repository is balancing minimalism with usefulness. Instead of shipping empty command stubs, this scaffold includes just enough real indexing, retrieval, JSON output, and evaluation logic to make future iterations concrete while keeping the implementation small and easy to explain during a review.
