@@ -202,7 +202,7 @@ class RagCli:
             )
         try:
             index = load_index(index_path)
-        except FileNotFoundError:
+        except (FileNotFoundError, OSError, ValidationError):
             return MinimalSearchResults(
                 question_id=question.question_id,
                 question=question.question,

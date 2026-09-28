@@ -95,7 +95,7 @@ def load_index(index_directory: Path) -> PersistedIndex:
 
 
 def search_index(index: PersistedIndex, query: str, k: int) -> list[MinimalSource]:
-    """Run a lightweight TF-IDF-style retrieval over indexed chunks."""
+    """Return the top-k chunks ranked with logarithmic TF-IDF scores."""
 
     if not query.strip() or k <= 0:
         return []
@@ -148,7 +148,7 @@ def _score_chunk(
     document_frequencies: dict[str, int],
     total_chunks: int,
 ) -> float:
-    """Compute a simple TF-IDF score for a chunk."""
+    """Compute the sum of logarithmic TF-IDF weights for matching terms."""
 
     score = 0.0
     for term, query_count in query_terms.items():

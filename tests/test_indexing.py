@@ -108,6 +108,45 @@ class IndexingTests(unittest.TestCase):
         self.assertEqual(search_index(index, "", k=5), [])
         self.assertEqual(search_index(index, "unrelated", k=5), [])
 
+    def test_retrieval_limits_results_and_breaks_ties_by_source_location(self) -> None:
+        """Retrieval should return at most k results in a stable order."""
+
+        index = PersistedIndex(
+            max_chunk_size=2000,
+            chunk_count=3,
+            document_frequencies={"api": 3},
+            chunks=[
+                IndexedChunk(
+                    file_path="z-last.py",
+                    first_character_index=0,
+                    last_character_index=10,
+                    text="api",
+                    token_counts={"api": 1},
+                ),
+                IndexedChunk(
+                    file_path="a-first.py",
+                    first_character_index=20,
+                    last_character_index=30,
+                    text="api",
+                    token_counts={"api": 1},
+                ),
+                IndexedChunk(
+                    file_path="a-first.py",
+                    first_character_index=0,
+                    last_character_index=10,
+                    text="api",
+                    token_counts={"api": 1},
+                ),
+            ],
+        )
+
+        results = search_index(index, "api", k=2)
+
+        self.assertEqual(
+            [(source.file_path, source.first_character_index) for source in results],
+            [("a-first.py", 0), ("a-first.py", 20)],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
