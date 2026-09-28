@@ -18,7 +18,7 @@
 ## Project priorities
 1. Data models with `pydantic`
 2. CLI commands with Python Fire
-3. Lexical retrieval foundation (TF-IDF or BM25)
+3. Lexical retrieval foundation (TF-IDF)
 4. Honest, grounded answer generation with local models
 5. Recall@k measurement and reproducible outputs
 
