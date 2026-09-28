@@ -5,7 +5,7 @@
 ## Description
 This repository contains a **basic project skeleton** for the 42 Berlin **RAG against the machine** subject. The goal of the final project is to index a codebase, retrieve the most relevant source snippets for a question, and generate grounded answers from that retrieved context.
 
-The current scaffold already includes the mandatory repository layout, pydantic data models, a Python Fire CLI, lightweight lexical indexing/search plumbing, placeholder answer generation, and local evaluation helpers. It is intended to be a clean starting point for the full mandatory implementation.
+The project includes the mandatory repository layout, pydantic data models, a Python Fire CLI, lexical indexing and retrieval, lazy local Qwen answer generation, and local evaluation helpers.
 
 ## Instructions
 ### Prerequisites
@@ -45,7 +45,7 @@ make clean
 The scaffold follows the mandatory pipeline split:
 1. **Indexing** (`src/indexing.py`) reads text-like files from `data/raw/`, chunks them, tokenizes them, and persists a lexical index under `data/processed/`.
 2. **Retrieval** (`src/indexing.py`) loads the persisted index and ranks chunks with a lightweight TF-IDF-style scorer.
-3. **Answer generation** (`src/generation.py`) currently returns an honest placeholder response that points to retrieved context and marks the future Qwen integration point.
+3. **Answer generation** (`src/generation.py`) reconstructs retrieved chunks into a bounded prompt and lazily loads `Qwen/Qwen3-0.6B` through Transformers when the answer commands are used. If model dependencies or weights are unavailable, it returns an explicit grounded-generation error instead of inventing an answer.
 4. **Evaluation** (`src/evaluation.py`) computes recall@k with the same same-file plus overlapping-span rule described in the subject.
 5. **CLI orchestration** (`src/cli.py`) exposes all required subject commands through Python Fire.
 
@@ -66,7 +66,7 @@ The scaffold implements a simple lexical retriever built around:
 This gives the repository a working baseline that can later be replaced or extended with BM25, hybrid retrieval, caching, or semantic embeddings.
 
 ## Performance analysis
-This starter project is designed for correctness, structure, and graceful error handling first. It is **not yet tuned** to hit the target recall@5 or throughput thresholds from the subject. Those measurements should be added once the real corpus, prompt strategy, and answer generation model are integrated.
+This project is designed for correctness, structure, and graceful error handling first. It is **not yet tuned** to hit the target recall@5 or throughput thresholds from the subject. Those measurements should be recorded after indexing the supplied corpus and running the official evaluation workflow.
 
 ## Design decisions
 - **uv** is used as the package manager to match the subject and evaluator expectations.

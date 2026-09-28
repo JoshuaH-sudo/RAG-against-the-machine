@@ -11,7 +11,7 @@ from pydantic import ValidationError
 from tqdm import tqdm
 
 from .evaluation import compute_recall_at_k
-from .generation import build_placeholder_answer
+from .generation import generate_answer
 from .indexing import build_index, load_index, search_index
 from .io_utils import load_json, save_json
 from .models import (
@@ -109,7 +109,15 @@ class RagCli:
 
         question = UnansweredQuestion(question=query)
         search_payload = self._single_search_payload(question, k, Path.cwd() / index_directory)
-        answer = build_placeholder_answer(search_payload.question, search_payload.retrieved_sources)
+        try:
+            index = load_index(Path.cwd() / index_directory)
+        except (FileNotFoundError, OSError, ValidationError):
+            index = None
+        answer = generate_answer(
+            search_payload.question,
+            search_payload.retrieved_sources,
+            index,
+        )
         result = MinimalAnswer(**search_payload.model_dump(), answer=answer)
         return json.dumps(result.model_dump(), indent=2)
 
@@ -117,8 +125,9 @@ class RagCli:
         self,
         student_search_results_path: str,
         save_directory: str,
+        index_directory: str = "data/processed",
     ) -> str:
-        """Generate placeholder answers from saved search results."""
+        """Generate grounded answers from saved search results."""
 
         source_path = Path.cwd() / student_search_results_path
         try:
@@ -129,9 +138,14 @@ class RagCli:
                 f"Failed to load student search results: {error}",
             )
 
+        try:
+            index = load_index(Path.cwd() / index_directory)
+        except (FileNotFoundError, OSError, ValidationError):
+            index = None
+
         answers: list[MinimalAnswer] = []
         for item in tqdm(payload.search_results, desc="Answering", unit="question"):
-            answer = build_placeholder_answer(item.question, item.retrieved_sources)
+            answer = generate_answer(item.question, item.retrieved_sources, index)
             answers.append(MinimalAnswer(**item.model_dump(), answer=answer))
 
         result = StudentSearchResultsAndAnswer(search_results=answers, k=payload.k)
