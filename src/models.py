@@ -5,15 +5,23 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class MinimalSource(BaseModel):
     """Represents one retrieved source span."""
 
     file_path: str
-    first_character_index: int
-    last_character_index: int
+    first_character_index: int = Field(ge=0)
+    last_character_index: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def validate_span(self) -> "MinimalSource":
+        """Ensure source offsets describe a forward character span."""
+
+        if self.last_character_index < self.first_character_index:
+            raise ValueError("last_character_index must not precede first_character_index")
+        return self
 
 
 class UnansweredQuestion(BaseModel):
@@ -54,14 +62,14 @@ class StudentSearchResults(BaseModel):
     """Represents a batch of search results."""
 
     search_results: list[MinimalSearchResults]
-    k: int
+    k: int = Field(ge=0)
 
 
 class StudentSearchResultsAndAnswer(BaseModel):
     """Represents a batch of answers."""
 
     search_results: list[MinimalAnswer]
-    k: int
+    k: int = Field(ge=0)
 
 
 class IndexedChunk(BaseModel):
@@ -77,8 +85,8 @@ class IndexedChunk(BaseModel):
 class PersistedIndex(BaseModel):
     """Represents the persisted lexical index."""
 
-    max_chunk_size: int
-    chunk_count: int
+    max_chunk_size: int = Field(gt=0)
+    chunk_count: int = Field(ge=0)
     document_frequencies: dict[str, int]
     chunks: list[IndexedChunk]
 
